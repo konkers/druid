@@ -19,7 +19,9 @@ use super::{
     Align, BackgroundBrush, Click, Container, Controller, ControllerHost, EnvScope,
     IdentityWrapper, Padding, Parse, SizedBox, WidgetId,
 };
-use crate::{Color, Data, Env, EventCtx, Insets, KeyOrValue, Lens, LensWrap, UnitPoint, Widget};
+use crate::{
+    Color, Data, Env, EventCtx, Insets, KeyOrValue, Lens, LensWrap, MouseButton, UnitPoint, Widget,
+};
 
 /// A trait that provides extra methods for combining `Widget`s.
 pub trait WidgetExt<T: Data>: Widget<T> + Sized + 'static {
@@ -172,7 +174,21 @@ pub trait WidgetExt<T: Data>: Widget<T> + Sized + 'static {
         self,
         f: impl Fn(&mut EventCtx, &mut T, &Env) + 'static,
     ) -> ControllerHost<Self, Click<T>> {
-        ControllerHost::new(self, Click::new(f))
+        ControllerHost::new(self, Click::new(f, None))
+    }
+
+    fn on_left_click(
+        self,
+        f: impl Fn(&mut EventCtx, &mut T, &Env) + 'static,
+    ) -> ControllerHost<Self, Click<T>> {
+        ControllerHost::new(self, Click::new(f, Some(MouseButton::Left)))
+    }
+
+    fn on_right_click(
+        self,
+        f: impl Fn(&mut EventCtx, &mut T, &Env) + 'static,
+    ) -> ControllerHost<Self, Click<T>> {
+        ControllerHost::new(self, Click::new(f, Some(MouseButton::Right)))
     }
 
     /// Draw the [`layout`] `Rect`s of  this widget and its children.

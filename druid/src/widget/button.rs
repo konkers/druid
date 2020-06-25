@@ -82,7 +82,7 @@ impl<T: Data> Button<T> {
         self,
         f: impl Fn(&mut EventCtx, &mut T, &Env) + 'static,
     ) -> ControllerHost<Self, Click<T>> {
-        ControllerHost::new(self, Click::new(f))
+        ControllerHost::new(self, Click::new(f, None))
     }
 }
 

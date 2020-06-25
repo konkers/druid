@@ -17,7 +17,7 @@
 //! [`Controller`]: struct.Controller.html
 
 use crate::widget::Controller;
-use crate::{Data, Env, Event, EventCtx, LifeCycle, LifeCycleCtx, Widget};
+use crate::{Data, Env, Event, EventCtx, LifeCycle, LifeCycleCtx, MouseButton, MouseEvent, Widget};
 
 /// A clickable [`Controller`] widget. Pass this and a child widget to a
 /// [`ControllerHost`] to make the child interactive. More conveniently, this is
@@ -38,13 +38,26 @@ use crate::{Data, Env, Event, EventCtx, LifeCycle, LifeCycleCtx, Widget};
 pub struct Click<T> {
     /// A closure that will be invoked when the child widget is clicked.
     action: Box<dyn Fn(&mut EventCtx, &mut T, &Env)>,
+
+    filter: Option<MouseButton>,
 }
 
 impl<T: Data> Click<T> {
     /// Create a new clickable [`Controller`] widget.
-    pub fn new(action: impl Fn(&mut EventCtx, &mut T, &Env) + 'static) -> Self {
+    pub fn new(
+        action: impl Fn(&mut EventCtx, &mut T, &Env) + 'static,
+        filter: Option<MouseButton>,
+    ) -> Self {
         Click {
             action: Box::new(action),
+            filter,
+        }
+    }
+
+    fn filter_event(&self, event: &MouseEvent) -> bool {
+        match self.filter {
+            Some(f) => f == event.button,
+            None => true,
         }
     }
 }
@@ -52,12 +65,14 @@ impl<T: Data> Click<T> {
 impl<T: Data, W: Widget<T>> Controller<T, W> for Click<T> {
     fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
         match event {
-            Event::MouseDown(_) => {
-                ctx.set_active(true);
-                ctx.request_paint();
+            Event::MouseDown(mouse_event) => {
+                if self.filter_event(&mouse_event) {
+                    ctx.set_active(true);
+                    ctx.request_paint();
+                }
             }
-            Event::MouseUp(_) => {
-                if ctx.is_active() {
+            Event::MouseUp(mouse_event) => {
+                if self.filter_event(&mouse_event) && ctx.is_active() {
                     ctx.set_active(false);
                     if ctx.is_hot() {
                         (self.action)(ctx, data, env);
